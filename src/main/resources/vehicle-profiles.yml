@@ -1,0 +1,62 @@
+# MountLicense vehicle profiles
+# Each profile maps a set of entity types to a feature set.
+# When the player interacts with a license, the first profile whose
+# entityTypes list contains the target's EntityType wins.
+#
+# Features (Phase 1 honored: register, protect-flag, station-flag.
+# Other flags are reserved for later phases and stored on the index only.)
+
+profiles:
+  horse:
+    entityTypes:
+      - HORSE
+      - DONKEY
+      - MULE
+      - SKELETON_HORSE
+      - ZOMBIE_HORSE
+    features:
+      register: true
+      protect: true
+      summon: true
+      park: true
+      inventoryAccess: true
+      station: true
+    requiresTamedOwner: true
+
+  camel:
+    entityTypes:
+      - CAMEL
+    features:
+      register: true
+      protect: true
+      summon: true
+      park: true
+      inventoryAccess: false
+      station: true
+    requiresTamedOwner: false
+
+  boat:
+    entityTypes:
+      - BOAT
+      - CHEST_BOAT
+    features:
+      register: true
+      protect: true
+      summon: true
+      park: true
+      inventoryAccess: true
+      station: true
+    requiresTamedOwner: false
+
+  minecart:
+    entityTypes:
+      - MINECART
+      - CHEST_MINECART
+    features:
+      register: true
+      protect: true
+      summon: false
+      park: true
+      inventoryAccess: true
+      station: true
+    requiresTamedOwner: false
