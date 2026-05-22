@@ -5,6 +5,12 @@
 #
 # Features (Phase 1 honored: register, protect-flag, station-flag.
 # Other flags are reserved for later phases and stored on the index only.)
+#
+# Compatibility:
+# The plugin compiles against Spigot API 1.18.2. Newer entity names in this
+# file are skipped with a startup warning on older servers instead of breaking
+# the whole profile load. CAMEL needs a 1.20+ API/server; CHEST_BOAT needs
+# 1.19+.
 
 profiles:
   horse:

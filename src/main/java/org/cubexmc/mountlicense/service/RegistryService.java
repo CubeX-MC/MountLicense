@@ -3,6 +3,7 @@ package org.cubexmc.mountlicense.service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -59,7 +60,8 @@ public class RegistryService {
         NO_PERMISSION,
         COOLDOWN,
         NOT_ENOUGH_MONEY,
-        MAX_REACHED
+        MAX_REACHED,
+        FAILED
     }
 
     public Result tryRegister(Player player, Entity target, ItemStack handItem) {
@@ -124,6 +126,7 @@ public class RegistryService {
         }
 
         double cost = plugin.configManager().getRegisterCost();
+        boolean charged = false;
         if (cost > 0 && economy().isReady()) {
             if (!economy().has(player, cost)) {
                 Map<String, String> p = new HashMap<>();
@@ -137,24 +140,42 @@ public class RegistryService {
                 send(player, "registration.fail_economy", p);
                 return Result.NOT_ENOUGH_MONEY;
             }
+            charged = true;
             Map<String, String> p = new HashMap<>();
             p.put("amount", formatMoney(cost));
             send(player, "registration.charged", p);
         }
 
-        writeAndIndex(player, target, profile);
-
-        if (handItem.getAmount() > 1) {
-            handItem.setAmount(handItem.getAmount() - 1);
-        } else {
-            player.getInventory().setItemInMainHand(null);
+        UUID vehicleId = UUID.randomUUID();
+        VehicleRecord record;
+        try {
+            record = writeAndIndex(player, target, profile, vehicleId);
+            if (handItem.getAmount() > 1) {
+                handItem.setAmount(handItem.getAmount() - 1);
+            } else {
+                player.getInventory().setItemInMainHand(null);
+            }
+        } catch (RuntimeException ex) {
+            rollbackRegistration(target, vehicleId);
+            if (charged && !economy().deposit(player, cost)) {
+                plugin.getLogger().warning("Registration failed after charging "
+                        + player.getName() + "; automatic refund of " + formatMoney(cost) + " failed.");
+            }
+            cooldowns.clear(player.getUniqueId());
+            plugin.getLogger().log(Level.SEVERE, "Failed to register vehicle " + vehicleId, ex);
+            send(player, "registration.fail_internal", null);
+            return Result.FAILED;
         }
+
+        Map<String, String> p = new HashMap<>();
+        p.put("profile", profile.id());
+        p.put("vehicle_id", record.shortId());
+        send(player, "registration.success", p);
 
         return Result.SUCCESS;
     }
 
-    private void writeAndIndex(Player player, Entity target, VehicleProfile profile) {
-        UUID vehicleId = UUID.randomUUID();
+    private VehicleRecord writeAndIndex(Player player, Entity target, VehicleProfile profile, UUID vehicleId) {
         long now = System.currentTimeMillis();
 
         PersistentDataContainer pdc = target.getPersistentDataContainer();
@@ -191,14 +212,26 @@ public class RegistryService {
 
         index.put(record);
 
-        Map<String, String> p = new HashMap<>();
-        p.put("profile", profile.id());
-        p.put("vehicle_id", record.shortId());
-        send(player, "registration.success", p);
-
         if (plugin.configManager().isDebug()) {
             plugin.getLogger().info("Registered vehicle " + vehicleId + " (" + profile.id()
                     + ") for " + player.getName());
+        }
+        return record;
+    }
+
+    private void rollbackRegistration(Entity target, UUID vehicleId) {
+        if (target != null) {
+            PersistentDataContainer pdc = target.getPersistentDataContainer();
+            pdc.remove(keys.vehicleId());
+            pdc.remove(keys.ownerUuid());
+            pdc.remove(keys.profile());
+            pdc.remove(keys.state());
+            pdc.remove(keys.createdAt());
+            pdc.remove(keys.schemaVersion());
+            target.removeScoreboardTag("mountlicense_registered");
+        }
+        if (vehicleId != null) {
+            index.remove(vehicleId);
         }
     }
 

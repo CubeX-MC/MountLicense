@@ -16,7 +16,7 @@ commands:
 permissions:
   mountlicense.use:
     default: true
-    description: Allow basic player commands (list, info).
+    description: Allow basic player commands (help, list, info, locate).
   mountlicense.register:
     default: true
     description: Allow registering eligible vehicles with a license.

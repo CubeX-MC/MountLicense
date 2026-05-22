@@ -38,7 +38,7 @@ recall:
   search_radius: 100
   # Cooldown per player (seconds). 0 disables the cooldown.
   cooldown_seconds: 30
-  # Refuse teleport if destination has no solid ground below or solid block above.
+  # Refuse teleport unless feet/head are passable and the block below is solid and safe.
   require_safe_destination: true
   # When true, recalled mounts have their state forced to ACTIVE and AI enabled.
   wake_on_recall: true

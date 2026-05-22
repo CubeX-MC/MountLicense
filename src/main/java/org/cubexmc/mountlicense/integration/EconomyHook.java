@@ -58,4 +58,17 @@ public class EconomyHook {
             return false;
         }
     }
+
+    public boolean deposit(OfflinePlayer player, double amount) {
+        if (!isReady() || amount <= 0) return true;
+        try {
+            Object response = economy.getClass()
+                    .getMethod("depositPlayer", OfflinePlayer.class, double.class)
+                    .invoke(economy, player, amount);
+            return (boolean) response.getClass().getField("transactionSuccess").get(response);
+        } catch (ReflectiveOperationException ex) {
+            plugin.getLogger().warning("Economy.deposit failed: " + ex.getMessage());
+            return false;
+        }
+    }
 }

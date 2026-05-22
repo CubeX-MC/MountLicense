@@ -36,8 +36,12 @@ public class VehicleIndex {
     private BukkitTask autosaveTask;
 
     public VehicleIndex(MountLicensePlugin plugin) {
+        this(plugin, new File(plugin.getDataFolder(), FILE_NAME));
+    }
+
+    VehicleIndex(MountLicensePlugin plugin, File file) {
         this.plugin = plugin;
-        this.file = new File(plugin.getDataFolder(), FILE_NAME);
+        this.file = file;
     }
 
     public void load() {

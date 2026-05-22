@@ -73,6 +73,8 @@ public class MountLicensePlugin extends JavaPlugin {
             root.setTabCompleter(executor);
         }
 
+        new Metrics(this, 31450);
+
         getLogger().info("MountLicense " + getDescription().getVersion() + " enabled.");
     }
 

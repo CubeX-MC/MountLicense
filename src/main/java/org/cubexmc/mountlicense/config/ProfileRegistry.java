@@ -68,6 +68,10 @@ public class ProfileRegistry {
             }
 
             boolean requiresTamed = section.getBoolean("requiresTamedOwner", false);
+            if (entityTypes.isEmpty()) {
+                plugin.getLogger().warning("Profile " + id
+                        + " has no valid EntityType on this server API and will not match entities.");
+            }
 
             VehicleProfile profile = new VehicleProfile(id, entityTypes, features, requiresTamed);
             profilesById.put(id, profile);

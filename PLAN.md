@@ -4,15 +4,17 @@
 
 MountLicense is a lightweight Minecraft vehicle-network plugin. Its core idea is
 to turn animals and physical vehicles into registered transport assets that can
-be parked, protected, located, summoned within a sane range, assigned to
-stations, and optionally shared or rented.
+be parked, protected, located, summoned within a sane range, and optionally
+shared. Public station/rental networks are a later extension, not part of the
+core MVP.
 
 The plugin should not compete as a heavy horse RPG, pet leveling, or virtual
 stable system. Its value is closer to public infrastructure:
 
 - Players keep using real in-world entities instead of menu-only pets.
 - Servers can build roads, docks, stables, terminals, and rental yards around
-  vehicles.
+  vehicles, with public station/rental tooling deferred until the ownership
+  core is stable.
 - The plugin protects the investment without replacing vanilla travel.
 - The default behavior stays small, event-driven, and easy to audit.
 
@@ -212,8 +214,8 @@ Key modes:
 
 ### Station Permit
 
-The station permit creates a stable post, dock post, rail berth, or parking
-anchor.
+The station permit is reserved for the optional public station/rental extension.
+It is not part of the current MVP command or item surface.
 
 Default item:
 
@@ -333,10 +335,12 @@ If enabled:
 - Abort on cross-world or unsafe destination unless explicitly allowed.
 - Record evidence in docs because this feature is runtime-sensitive.
 
-## 10. Stations And Traffic Network
+## 10. Optional Public Stations And Rentals
 
-Stations are the feature that makes MountLicense more than another horse
-protection plugin.
+Private parking is covered by Phase 2 park/lock plus normal server builds such
+as fences, docks, and rail yards. A first-class station system is deferred out
+of the core MVP. If it returns, it should serve public infrastructure and
+rental workflows rather than replacing private stables.
 
 ### Station Types
 
@@ -346,7 +350,11 @@ protection plugin.
 - `YARD`: mixed storage and rental.
 - `CARGO`: cargo-focused mounts and storage vehicles.
 
-### Station Data
+### Reserved Station Data
+
+The current `VehicleRecord.stationId` field is a reserved compatibility hook.
+Do not treat it as a shipped station feature until station commands and storage
+exist.
 
 Use `plugins/MountLicense/stations.yml`.
 
@@ -684,17 +692,16 @@ Movement anchoring:
 
 ### Phase 4: Stations
 
-- Station records.
-- Stable and dock station types.
-- Station parking radius and slot limit.
-- `/ml station list`, `/ml station info`, `/ml station park`.
+Cancelled from the core MVP. Private stables and docks are handled through
+normal world builds plus Phase 2 park/lock. Public stations may return as part
+of Phase 5b if a server needs shared infrastructure or checkout flows.
 
 ### Phase 5: Sharing And Rentals
 
 - Trust list.
 - Transfer.
-- Public rental vehicles.
-- Station checkout and check-in.
+- Public rental vehicles, station checkout, and check-in are optional Phase 5b
+  work, not current release commitments.
 
 ### Phase 6: Optional Integrations
 
@@ -743,7 +750,8 @@ Manual checks for first playable build:
 - Use key recall inside the configured radius.
 - Try recall after the entity is unloaded and verify last-known-location
   feedback.
-- Park at a stable station and a dock station.
+- If Phase 5b is enabled in a future build, park at a public stable and dock
+  station.
 - Restart server and verify PDC and index reconciliation.
 
 ## 23. Open Decisions
@@ -755,7 +763,8 @@ Manual checks for first playable build:
   by default?
 - Should chunk-load recall exist at all, or should the plugin stay strictly
   loaded-entity only?
-- Should stations be admin-only infrastructure or player-owned property?
+- Decision: station tooling is deferred out of the core MVP; if revived, start
+  as admin-owned public infrastructure.
 - Should economy costs be part of MVP or left as optional integration?
 - Should rental vehicles be in v1 or after core ownership is stable?
 
@@ -763,10 +772,10 @@ Manual checks for first playable build:
 
 - Registered entities carry PDC and can be reindexed after restart.
 - Vehicle index survives restart and gracefully handles missing entities.
-- Horse-like entities, boats, and chest boats have working registration,
+- Horse-like entities, boats, and version-available chest boats have working registration,
   protection, parking, and locate behavior.
 - Player-facing messages are localizable.
 - Admins can inspect, repair, and reindex.
 - No global polling is required for normal operation.
-- Documentation explains summon limits, cleaner compatibility, and entity
-  support tiers.
+- Documentation explains summon limits, cleaner compatibility, version-gated
+  entity support tiers, and deferred station/rental boundaries.

@@ -16,7 +16,9 @@ public final class VehicleProfile {
     public VehicleProfile(String id, Set<EntityType> entityTypes,
                           Set<VehicleFeature> features, boolean requiresTamedOwner) {
         this.id = id;
-        this.entityTypes = Collections.unmodifiableSet(EnumSet.copyOf(entityTypes));
+        this.entityTypes = entityTypes.isEmpty()
+                ? Collections.unmodifiableSet(EnumSet.noneOf(EntityType.class))
+                : Collections.unmodifiableSet(EnumSet.copyOf(entityTypes));
         this.features = features.isEmpty()
                 ? Collections.unmodifiableSet(EnumSet.noneOf(VehicleFeature.class))
                 : Collections.unmodifiableSet(EnumSet.copyOf(features));

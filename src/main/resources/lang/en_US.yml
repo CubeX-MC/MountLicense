@@ -28,6 +28,7 @@ registration:
   fail_no_permission: "{prefix}&cYou lack the permission to register vehicles."
   fail_cooldown: "{prefix}&cToo fast. Try again in &e%seconds%s&c."
   fail_economy: "{prefix}&cInsufficient funds: need &e%amount%&c."
+  fail_internal: "{prefix}&cRegistration failed and the license was not consumed. If charged, an automatic refund was attempted; ask an admin to check the logs."
   fail_max_vehicles: "{prefix}&cYou already own &e%current%&c vehicle(s); cap is &e%max%&c. Release one with /ml release first."
   charged: "{prefix}&7Charged &e%amount% &7as registration fee."
 

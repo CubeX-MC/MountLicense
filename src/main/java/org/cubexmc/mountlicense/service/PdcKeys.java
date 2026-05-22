@@ -15,14 +15,29 @@ public final class PdcKeys {
     private final NamespacedKey keyBoundVehicleKey;
 
     public PdcKeys(MountLicensePlugin plugin) {
-        this.itemRoleKey = new NamespacedKey(plugin, "item_role");
-        this.vehicleIdKey = new NamespacedKey(plugin, "vehicle_id");
-        this.ownerUuidKey = new NamespacedKey(plugin, "owner_uuid");
-        this.profileKey = new NamespacedKey(plugin, "profile");
-        this.stateKey = new NamespacedKey(plugin, "state");
-        this.createdAtKey = new NamespacedKey(plugin, "created_at");
-        this.schemaVersionKey = new NamespacedKey(plugin, "schema_version");
-        this.keyBoundVehicleKey = new NamespacedKey(plugin, "key_bound_vehicle");
+        this(
+                new NamespacedKey(plugin, "item_role"),
+                new NamespacedKey(plugin, "vehicle_id"),
+                new NamespacedKey(plugin, "owner_uuid"),
+                new NamespacedKey(plugin, "profile"),
+                new NamespacedKey(plugin, "state"),
+                new NamespacedKey(plugin, "created_at"),
+                new NamespacedKey(plugin, "schema_version"),
+                new NamespacedKey(plugin, "key_bound_vehicle")
+        );
+    }
+
+    PdcKeys(NamespacedKey itemRoleKey, NamespacedKey vehicleIdKey, NamespacedKey ownerUuidKey,
+            NamespacedKey profileKey, NamespacedKey stateKey, NamespacedKey createdAtKey,
+            NamespacedKey schemaVersionKey, NamespacedKey keyBoundVehicleKey) {
+        this.itemRoleKey = itemRoleKey;
+        this.vehicleIdKey = vehicleIdKey;
+        this.ownerUuidKey = ownerUuidKey;
+        this.profileKey = profileKey;
+        this.stateKey = stateKey;
+        this.createdAtKey = createdAtKey;
+        this.schemaVersionKey = schemaVersionKey;
+        this.keyBoundVehicleKey = keyBoundVehicleKey;
     }
 
     public NamespacedKey itemRole() { return itemRoleKey; }

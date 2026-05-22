@@ -9,15 +9,14 @@ verification gates that keep changes reviewable.
 Read these in order before making non-trivial changes:
 
 1. `docs/agent-pipeline.md` for the reusable agent workflow.
-2. `docs/agent-project-profile.md` for Metro-specific runtime, architecture,
+2. `docs/agent-project-profile.md` for this plugin's runtime, architecture,
    risk, and documentation rules.
 3. `docs/agent-verification-matrix.md` to select tests and manual checks.
-4. Task-specific docs:
-   - Architecture or scheduler work: `docs/architecture.md`
-   - Public integration API work: `docs/api.md`
-   - Platform or dependency work: `docs/compatibility.md`
-   - Runtime behavior changes: `docs/regression-baseline.md`
-   - Release work: `docs/release-checklist.md`
+4. Task-specific docs when present:
+   - Current plan or implementation notes: `PLAN.md`, `DESIGN.md`
+   - Operator-facing behavior: `README.md`
+   - Architecture, API, compatibility, regression, or release docs under
+     `docs/`
 
 ## Skill Routing
 
@@ -33,7 +32,7 @@ Use reusable skills for process discipline, then load project facts from
 - `skills/hci-design/SKILL.md`: command UX, GUI flows, permission feedback,
   in-game copy, onboarding, or human-facing workflow changes.
 
-Do not put Metro-specific details into skills. Skills should remain portable;
+Do not put project-specific details into skills. Skills should remain portable;
 project facts belong in `docs/agent-project-profile.md`.
 
 ## Working Rules
@@ -45,8 +44,8 @@ project facts belong in `docs/agent-project-profile.md`.
 - Do not bypass documented project boundaries in `docs/agent-project-profile.md`.
 - Do not modify user-visible behavior without checking documentation and
   regression impact.
-- Do not change config, data schema, permissions, public API, or runtime
-  scheduling without updating the relevant docs and tests.
+- Do not change config, data schema, permissions, public API, economy, storage,
+  or runtime scheduling without updating the relevant docs and tests.
 - Do not hardcode player-visible messages in Java when the project profile says
   localization is required.
 
@@ -69,7 +68,7 @@ A change is complete when:
 - The risk class is named and matched with appropriate verification.
 - Automated tests pass for the affected surface, or any gap is explicit.
 - Documentation is synchronized for user-visible, API, config, compatibility,
-  migration, permission, or release-impacting changes.
+  migration, permission, storage, economy, or release-impacting changes.
 - Manual regression scope is identified when runtime behavior cannot be fully
   covered by unit tests.
 - The final response includes evidence, residual risk, and touched files at a

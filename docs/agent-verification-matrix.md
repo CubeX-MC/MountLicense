@@ -9,26 +9,27 @@ claims are involved.
 | Change type | Risk | Required context | Automated verification | Manual/runtime verification |
 | :-- | :-- | :-- | :-- | :-- |
 | Docs only | R0 | Affected doc and project profile | Spell/link review where practical | None |
-| Pure model/util | R1 | Owning class and tests | Targeted test class | None unless behavior is user-visible |
-| Service or manager logic | R2 | Owning service/manager, callers, tests | Targeted tests, then `mvn test` when shared | Relevant baseline scenario if runtime flow changes |
-| Command behavior | R2 | Command class, command service, permissions, locale files | Command/service tests, language key test | Permission and failure-path smoke check |
-| GUI behavior | R2 | View, controller, listener, permissions, locale files | GUI controller/listener tests | Confirm destructive actions and navigation path |
-| Config read/default | R2/R3 | `ConfigFacade`, `config.yml`, updater tests, docs | Config updater/facade tests, `mvn test` | `/m reload` smoke check for release work |
-| Data migration/persistence | R3 | Manager, updater, SaveCoordinator, old data shape | Persistence and migration tests, `mvn verify` | Backup/rollback scenario from release checklist |
-| Train/boarding/runtime flow | R3 | Listener/service/train classes and regression baseline | Targeted tests plus `mvn test` or `mvn verify` | Scenario A-D as applicable |
-| Portal or cross-world flow | R3 | PortalManager, train session, scheduler policy | Portal/train tests plus `mvn verify` | Scenario E on Paper/Folia if release-impacting |
-| Scheduler/Folia work | R3/R4 | `SchedulerUtil`, lifecycle, architecture, compatibility | Targeted lifecycle/train/portal tests, `mvn verify` | Real Folia smoke test before stronger support claims |
-| Economy/pricing | R3 | TicketService, PriceService, line services, locale files | Pricing/ticket/train tests, `mvn test` | Failure-path ride smoke if runtime-impacting |
-| Public API | R3 | `MetroAPI`, docs/api.md, tests | API tests, `mvn test` | Consumer compatibility review |
-| Dependency/shade/build | R3/R4 | `pom.xml`, dependency tree, compatibility docs | `mvn verify`, artifact inspection | Startup smoke test when shaded runtime changes |
-| Release/version | R4 | Release checklist, changelog, compatibility, README | `mvn clean verify package` | Full release checklist |
+| Pure model/util | R1 | Owning class and tests | Targeted test class when present | None unless behavior is user-visible |
+| Service or manager logic | R2 | Owning service/manager, callers, tests | Targeted tests, then `mvn test` when shared | Relevant runtime smoke if behavior reaches players |
+| Command behavior | R2 | Command class, permissions, locale files, README | Command/service tests, `mvn test` when available | Permission and failure-path smoke check |
+| GUI or inventory flow | R2/R3 | GUI/listener classes, commands, permissions, locale files | GUI/listener/service tests, `mvn test` | Navigation, confirmation, and blocked-action smoke check |
+| Config or localization | R2/R3 | Config manager, `config.yml`, `plugin.yml`, locale files, README | Config/language tests when present, `mvn test` | Reload smoke check for release work |
+| Data storage, schema, or migration | R3 | Storage/repository classes, old data shape, defaults, docs | Persistence and migration tests, `mvn verify` | Backup, downgrade, and reload scenario |
+| Economy or escrow | R3 | Economy adapter, service state machine, permissions, config | Economy/service tests, `mvn test` or `mvn verify` | Vault provider smoke check and failure-path review |
+| Entity, item, PDC, or Bukkit event flow | R3 | Listener/service classes, PDC keys, config, locale files | Targeted tests where possible, `mvn test` | Live server smoke for affected event path |
+| Scheduler, threading, or shutdown behavior | R3/R4 | Plugin lifecycle, scheduled tasks, storage flush paths, platform docs | Targeted lifecycle/storage tests, `mvn verify` | Real server stop/reload smoke before stronger claims |
+| Public API or integration contract | R3 | API/integration classes, docs, compatibility notes | API tests, `mvn test` | Consumer compatibility review |
+| Dependency, shade, or build metadata | R3/R4 | `pom.xml`, dependency tree, `plugin.yml`, README | `mvn verify`, artifact inspection | Startup smoke when runtime classpath changes |
+| Release/version/support claim | R4 | Release notes, README, compatibility docs, build metadata | `mvn clean verify package` | Full install/start/reload smoke check |
 
 ## Test Selection Rules
 
-- If one class owns the behavior, run its targeted test first.
-- If a shared service, manager, or lifecycle class changed, run `mvn test`.
-- If dependency, shading, coverage, SpotBugs, Folia support, persistence, public
-  API, or release artifact is involved, run `mvn verify`.
+- If one class owns the behavior, run its targeted test first when the test
+  exists.
+- If a shared service, manager, storage, listener, command, or lifecycle class
+  changed, run `mvn test`.
+- If dependency, shading, persistence, public API, economy, scheduler, or release
+  artifact behavior is involved, run `mvn verify`.
 - If the artifact itself matters, run `mvn clean verify package`.
 - If unit tests cannot simulate the risk, document the manual regression
   scenario instead of pretending the risk is covered.
@@ -39,27 +40,32 @@ For every verification command, record:
 
 - Command.
 - Result.
-- Relevant summary, such as number of tests or gate status.
+- Relevant summary, such as test count, package output, or gate status.
 - Any warnings that might matter for release quality.
 
 Example:
 
 ```text
 mvn verify
-Result: passed. 524 tests, JaCoCo gate met, SpotBugs 0 issues.
-Notes: shade produced overlap warnings already known for shaded dependencies.
+Result: passed. 42 tests, package built.
+Notes: shade produced expected dependency overlap warnings.
 ```
 
 ## Manual Regression Mapping
 
-- Boarding/departure/arrival/terminal: Scenario A and D.
-- Multi-line candidate sorting and direction: Scenario B and C.
-- GUI destructive operations: route protection and clear-route checks.
-- Portals: Scenario E.
-- Rail protection: Scenario F.
-- Map integrations: provider-specific pass in `docs/regression-baseline.md`.
-- Release: all pre-release, runtime validation, and packaging items in
-  `docs/release-checklist.md`.
+- Command or permission changes: run the happy path plus at least one denied
+  path for the affected command.
+- GUI or inventory changes: check navigation, item clicks, cancellation, and
+  destructive-action confirmation when applicable.
+- Config or localization changes: reload and confirm the changed setting or
+  message appears in-game.
+- Storage changes: create, reload, restart, and confirm data survives; include a
+  rollback note for release-impacting changes.
+- Economy changes: test success, insufficient funds, missing provider, and
+  rollback or refund path.
+- Entity/item/PDC changes: exercise the actual Bukkit event path on a server.
+- Release work: install the built jar on a clean server profile and confirm
+  startup, command registration, and default resource generation.
 
 ## Stop Conditions
 

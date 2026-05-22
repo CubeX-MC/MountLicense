@@ -28,6 +28,7 @@ registration:
   fail_no_permission: "{prefix}&c你没有注册载具的权限。"
   fail_cooldown: "{prefix}&c操作过快，请稍候 &e%seconds%s &c再试。"
   fail_economy: "{prefix}&c金额不足：需要 &e%amount%&c。"
+  fail_internal: "{prefix}&c注册失败，未消耗牌照；如已扣费，系统已尝试自动退款。请联系管理员查看日志。"
   fail_max_vehicles: "{prefix}&c你名下已注册 &e%current%&c 辆载具，达到上限 &e%max%&c。请先 /ml release 一辆。"
   charged: "{prefix}&7已扣除 &e%amount% &7作为注册费。"
 

@@ -25,6 +25,7 @@ import org.cubexmc.mountlicense.service.ReindexResult;
 
 public class MountLicenseCommand implements CommandExecutor, TabCompleter {
 
+    private static final String USE_PERMISSION = "mountlicense.use";
     private static final List<String> ROOT_SUBS = Arrays.asList(
             "help", "list", "info", "park", "unpark", "lock", "unlock", "release",
             "recall", "locate", "key", "trust", "untrust", "admin");
@@ -41,10 +42,14 @@ public class MountLicenseCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0 || "help".equalsIgnoreCase(args[0])) {
+            if (!requirePermission(sender, USE_PERMISSION)) return true;
             sendHelp(sender);
             return true;
         }
         String sub = args[0].toLowerCase();
+        if (requiresUsePermission(sub) && !requirePermission(sender, USE_PERMISSION)) {
+            return true;
+        }
         switch (sub) {
             case "list":
                 return handleList(sender);
@@ -78,6 +83,20 @@ public class MountLicenseCommand implements CommandExecutor, TabCompleter {
                 lang().send(sender, "commands.unknown_subcommand", p);
                 return true;
         }
+    }
+
+    static boolean requiresUsePermission(String subcommand) {
+        if (subcommand == null) return false;
+        return switch (subcommand.toLowerCase()) {
+            case "help", "list", "info", "locate" -> true;
+            default -> false;
+        };
+    }
+
+    private boolean requirePermission(CommandSender sender, String permission) {
+        if (sender.hasPermission(permission)) return true;
+        lang().send(sender, "commands.no_permission");
+        return false;
     }
 
     private void sendHelp(CommandSender sender) {

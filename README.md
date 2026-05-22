@@ -1,5 +1,7 @@
 # MountLicense
 
+![](https://bstats.org/signatures/bukkit/MountLicense.svg)
+
 载具牌照插件。把马、驴、骡、骆驼、船、矿车注册为玩家的私有交通资产，并提供基础的所有权与索引管理。
 
 ## 当前状态：Phase 0 / 1 / 2 / 3 / 5a
@@ -22,8 +24,18 @@
 ## 兼容性
 
 - Java 17
-- Spigot/Paper 1.18.2 及以上
+- 编译基线：Spigot API 1.18.2，`plugin.yml` API version 为 `1.18`
+- 运行目标：Spigot/Paper 1.18.2 及以上
 - 可选：Vault（用于注册收费）
+
+`vehicle-profiles.yml` 默认保留较新版本实体名，旧版本会在启动时跳过未知实体类型并写入 warning，而不会中断整个 profile 加载：
+
+| 实体类型 | 最低版本 | 1.18.2 行为 |
+|---|---:|---|
+| HORSE / DONKEY / MULE / SKELETON_HORSE / ZOMBIE_HORSE | 1.18.2 | 可用 |
+| BOAT / MINECART / CHEST_MINECART | 1.18.2 | 可用 |
+| CHEST_BOAT | 1.19 | 1.18.2 跳过 |
+| CAMEL | 1.20 | 1.18.2 跳过 |
 
 ## 使用流程（玩家）
 
@@ -58,6 +70,7 @@
 ## 权限
 
 - `mountlicense.use` (默认 true)
+  - `/ml help`, `/ml list`, `/ml info`, `/ml locate`
 - `mountlicense.register` (默认 true)
 - `mountlicense.park` (默认 true)
 - `mountlicense.key.use` (默认 true)
@@ -157,7 +170,7 @@ LOCKED 状态不受自动模式影响——锁定的载具上下马不会改变�
 
 **`/ml info <id>`** 会在末尾显示 `信任名单: X, Y, Z` 或 `信任名单: 无`。
 
-**当前限制**：必须在目标玩家**在线**时才能 trust（命令通过名字查找）。日后再补离线 trust。
+**当前决策**：0.1.x 只支持对**在线玩家**执行 trust/untrust（精确在线名查找）。离线 UUID 解析会带来改名、缓存和歧义提示问题，推迟到需要持久玩家索引时再设计。
 
 ## 召回配置
 
@@ -171,6 +184,7 @@ recall:
   wake_on_recall: true            # 召回后强制 ACTIVE + 开 AI
 ```
 
+- 安全目的地要求：脚下和头部方块必须可通过、非液体、非危险方块；脚下方块下方必须是安全实心方块。
 - **未加载区块的载具召回会失败**，只显示最近位置（Phase 3 设计选择，避免 R3 风险）
 - **矿车不能召回**（`vehicle-profiles.yml` 的 minecart profile 默认 `summon: false`）
 - 召回会**重置自动 park 状态**：召回的瞬间载具变 ACTIVE，玩家可以立刻骑上
@@ -178,9 +192,9 @@ recall:
 ## 已知限制
 
 - **离线/远方载具无法召回**：必须在 100 格内且实体已加载。这是有意设计——不开 chunk-load 召回，保证服务端性能和 Folia 兼容。要找回远方的马，用 `/ml locate <id>` 看坐标自己走过去。
-- **没有信任列表**：队友想骑你的马只能你转让 ownership（`/ml release` 后让对方注册）。Phase 5a 实现 trust。
+- **trust/untrust 只支持在线玩家**：这是 0.1.x 的明确取舍，不做离线 UUID 猜测。
 - **PDC 写入主线程同步**，大量并发注册无优化。MVP 使用场景不会触发瓶颈。
-- **没有自动测试**。优先跑通端到端体验，单元测试在后续迭代补。
+- **真实服务器回归仍需执行**。当前已有 Maven 单元测试覆盖核心纯逻辑；Bukkit 事件、实体 AI、Inventory、PDC 与 Vault provider 行为仍需要实服检查。
 
 ## 构建
 
@@ -191,6 +205,8 @@ mvn clean package
 产物：`target/mountlicense-0.1.0.jar`
 
 ## 安装测试
+
+回归记录表见 [docs/manual-regression.md](docs/manual-regression.md)。发布前应在真实 Spigot/Paper 服务器把结果填入该文件，尤其是实体交互、重启持久化和 Vault 收费路径。
 
 1. 拷贝 jar 到服务器 `plugins/`
 2. 启动服务器，会生成 `plugins/MountLicense/` 含 `config.yml`、`vehicle-profiles.yml`、`lang/`

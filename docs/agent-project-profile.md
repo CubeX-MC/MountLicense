@@ -1,157 +1,155 @@
 # Agent Project Profile
 
-This file contains Metro-specific facts for agents. Reusable skills should read
-this file instead of embedding project-specific knowledge.
+This file contains MountLicense-specific facts for agents. Reusable skills
+should read this file instead of embedding project-specific knowledge.
 
 ## Project Identity
 
-- Project: Metro
+- Project: MountLicense
 - Type: Minecraft server plugin
 - Language/runtime: Java 17, Maven, Spigot API compile baseline
-- Main class: `org.cubexmc.metro.Metro`
-- Artifact: `target/metro-<version>.jar`
-- Core promise: manage metro lines, stops, ride flow, GUI administration,
-  portals, pricing, ownership, map integration, and public plugin API.
+- Main class: `org.cubexmc.mountlicense.MountLicensePlugin`
+- Artifact: `target/mountlicense-<version>.jar`
+- Core promise: register, protect, park, trust, locate, and recall mounts or
+  physical vehicles as player-owned transport assets.
 
 ## Runtime Matrix
 
 - Compile API: Spigot API 1.18.2
 - Plugin API version: `1.18`
 - Java build target: 17
-- Server platforms: Spigot, Paper, Folia
-- Folia declaration: `folia-supported: true`
-- Optional dependencies: Vault, BlueMap, dynmap, squaremap, ViaVersion
+- Server platforms claimed in docs: Spigot/Paper 1.18.2+
+- Folia declaration: none in `plugin.yml`; do not strengthen Folia support
+  claims without evidence.
+- Optional dependencies: Vault for registration economy.
+- Build packaging: Maven Shade Plugin creates the final jar; runtime
+  dependencies are currently provided or test scoped.
 
 Platform claims must stay synchronized across:
 
 - `pom.xml`
 - `src/main/resources/plugin.yml`
-- `docs/compatibility.md`
-- README files
-- Release notes
+- `README.md`
+- Release notes when present
 
 ## Architecture Map
 
-- Bootstrap/lifecycle: `Metro`, `lifecycle/*`
-- Config: `ConfigFacade`, `src/main/resources/config.yml`
-- Commands: `command/newcmd/*`
-- Command services: `service/*CommandService`
-- GUI views/controllers: `gui/view/*`, `gui/controller/*`, `GuiManager`,
-  `GuiListener`
-- Core managers: `LineManager`, `StopManager`, `PortalManager`,
-  `RailProtectionManager`, `RouteRecorder`
-- Train runtime: `train/*`
-- Persistence: `SaveCoordinator`, YAML data files, data updaters
-- Public API: `api/MetroAPI`
-- Map integrations: `integration/*`, `MapIntegrationLifecycle`
-- Localization: `LanguageManager`, `src/main/resources/lang/*.yml`
+- Bootstrap/lifecycle: `MountLicensePlugin`
+- Config/profile defaults: `config/ConfigManager`,
+  `config/ProfileRegistry`, `src/main/resources/config.yml`,
+  `src/main/resources/vehicle-profiles.yml`
+- Commands: `command/MountLicenseCommand`
+- Listeners: `listener/RegistrationListener`, `ProtectionListener`,
+  `AutoParkListener`, `KeyItemListener`
+- Services: `RegistryService`, `OwnershipService`, `ParkingService`,
+  `RecallService`, `ItemFactory`, `PdcKeys`
+- Persistence: `persistence/VehicleIndex`, runtime `vehicles.yml`
+- Economy: `integration/EconomyHook`
+- Models: `model/VehicleRecord`, `VehicleState`, `VehicleProfile`,
+  `VehicleFeature`
+- Localization: `lang/LanguageManager`, `src/main/resources/lang/*.yml`
 
 ## Hard Boundaries
 
-- Config reads should go through `ConfigFacade` unless the setting is truly local
-  and private.
-- Player-visible messages should go through language files and language manager.
-- Command classes should route, validate input, and delegate business work to
-  services.
-- GUI views render; GUI controllers handle navigation and click intent; business
-  rules stay in services or managers.
-- Bukkit world, block, player, entity, inventory, and minecart access must follow
-  `docs/architecture.md` Scheduler Policy.
-- Async code may perform file IO or work on already-built snapshots, but must not
-  access unsafe Bukkit state.
-- Persistence changes must preserve snapshot save semantics, dirty tracking,
-  migration compatibility, and shutdown/reload flush expectations.
-- Public API additions should prefer immutable snapshots for read-only external
-  integrations.
+- Player-visible messages should go through language files and
+  `LanguageManager`.
+- PDC keys should stay centralized in `PdcKeys`.
+- Command handling should validate input and delegate ownership, registry,
+  parking, recall, and item behavior to services.
+- Registration and protection changes must preserve owner/trustee/admin bypass
+  semantics.
+- Persistence changes must preserve `VehicleIndex` dirty tracking, autosave,
+  reload, and disable flush expectations.
+- Config changes require default resource updates and README synchronization.
+- Bukkit entity, player, inventory, and teleport access should stay on safe
+  server-thread event or scheduler paths.
 
 ## Data And Config Surfaces
 
 Default resources:
 
 - `config.yml`
-- `lines.yml`
-- `stops.yml`
+- `vehicle-profiles.yml`
 - `plugin.yml`
-- `lang/*.yml`
+- `lang/zh_CN.yml`
+- `lang/en_US.yml`
 
 Runtime data:
 
-- `lines.yml`
-- `stops.yml`
-- `portals.yml`
-- Migration backups: `*.bak-<schema_version>`
+- `plugins/MountLicense/vehicles.yml`
+- PDC tags on registered entities and key/license items
 
 Any config or data schema change requires:
 
 - Default resource update.
-- Compatibility read path or migration.
-- Tests for old and new shapes.
-- Documentation update.
-- Operator-facing rollback or migration notes when release-impacting.
+- Compatibility read path or migration when old data exists.
+- Tests where practical, or explicit manual regression scope.
+- README update and operator-facing rollback notes when release-impacting.
 
 ## Human Interaction Surfaces
 
-Metro UX happens through:
+MountLicense UX happens through:
 
-- Commands and tab completion.
-- Inventory GUI screens.
-- Titles, action bars, sounds, lore, and chat messages.
-- Permission failures and ownership/admin boundaries.
-- Map markers from optional integrations.
+- `/mountlicense` and `/ml` commands.
+- Sneak-right-click registration and key binding.
+- Right-click key recall.
+- Vehicle interaction protections for mount, damage, destroy, inventory, and
+  leash actions.
+- Localized chat messages, item display names, and lore.
+- Permission failures and owner/trustee/admin boundaries.
 
 Human-facing changes should preserve:
 
-- Clear line IDs when display names are ambiguous.
-- No misleading boarding prompt at terminal or unboardable stops.
-- Consistent permission semantics between command and GUI actions.
+- Short ID behavior for player-facing vehicle references.
+- Clear distinction between owner, trustee, bystander, and admin bypass rights.
+- No misleading recall success when the vehicle is unsupported, unloaded, dead,
+  or outside the search radius.
+- Consistent permission semantics between commands and event listeners.
 - Localized messages across all locale files.
-- Confirmation before destructive GUI operations.
 
 ## High-Risk Runtime Flows
 
 Treat these as R3 unless proven narrower:
 
-- Boarding: rail click, candidate line selection, minecart spawn, passenger add.
-- Ride lifecycle: waiting, departure, arrival, terminal cleanup, manual exit.
-- Economy: fare estimate, ticket check, charge, refund or failure path.
-- Portal teleport: paired portals, world/chunk availability, passenger restore.
-- Persistence: autosave, reload, disable flush, failed save, data migration.
-- Folia/threading: entity scheduler, region scheduler, shutdown cleanup.
-- Rail protection and route recording.
-- Map provider activation and refresh.
-- Public API mutations and snapshot contracts.
+- Vehicle registration and PDC writes.
+- Ownership, trustee, and admin bypass checks.
+- Protection listeners for mount, damage, destroy, inventory, and leash.
+- Park, unpark, lock, unlock, release, auto-park, and entity death cleanup.
+- Key binding, key item metadata, recall, safe destination checks, and locate.
+- Vehicle index persistence, autosave, reload, and disable flush.
+- Vault charging or refund behavior.
+- Vehicle profile changes that alter allowed entity features.
 
 ## Verification Defaults
 
 Standard commands:
 
 - Targeted unit test: `mvn "-Dtest=ClassNameTest" test`
-- All unit tests: `mvn test`
-- Quality gate: `mvn verify`
+- All unit tests or compile check: `mvn test`
+- Quality/package gate: `mvn verify`
 - Release artifact: `mvn clean verify package`
 
 Current expected gate:
 
-- `mvn verify` runs unit tests, JaCoCo coverage check, shade packaging, and
-  SpotBugs.
+- `mvn verify` compiles, runs any present tests, and builds the shaded artifact.
 
 Manual runtime checks:
 
-- Use `docs/regression-baseline.md` for scenarios A-F.
-- Use `docs/release-checklist.md` for release work.
+- Use the README installation and phase verification sections for live server
+  scenarios.
+- Prioritize the affected command, permission, listener, PDC, persistence, and
+  reload paths.
 
 ## Documentation Sync Map
 
-- Command, permission, or GUI change: README, README_en, `plugin.yml`, locale
-  files, regression checklist if runtime behavior changes.
-- Config change: `config.yml`, `ConfigFacade`, updater/migration path,
-  compatibility docs if support claims change.
-- API change: `docs/api.md`, API tests, compatibility notes when stability
-  changes.
-- Platform/dependency change: `pom.xml`, `plugin.yml`, `docs/compatibility.md`,
-  release notes.
-- Runtime-critical behavior: `docs/architecture.md` or
-  `docs/regression-baseline.md` when assumptions or smoke tests change.
+- Command, permission, item, or interaction change: README, `plugin.yml`,
+  locale files.
+- Config or profile change: `config.yml`, `vehicle-profiles.yml`, config/profile
+  managers, README.
+- Persistence or PDC schema change: `VehicleIndex`, `PdcKeys`, migration notes,
+  README when operator-visible.
+- Platform/dependency change: `pom.xml`, `plugin.yml`, README, release notes.
+- Economy change: `EconomyHook`, config defaults, README, failure-path docs.
 
 ## Evidence Expectations
 

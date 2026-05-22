@@ -205,14 +205,31 @@ public class RecallService {
         return player.hasPermission(OwnershipService.BYPASS_PERMISSION);
     }
 
-    private boolean isSafeDestination(Location loc) {
-        if (loc.getWorld() == null) return false;
+    static boolean isSafeDestination(Location loc) {
+        if (loc == null || loc.getWorld() == null) return false;
         Block feet = loc.getBlock();
         Block head = feet.getRelative(0, 1, 0);
         Block ground = feet.getRelative(0, -1, 0);
-        if (feet.getType() == Material.LAVA || head.getType() == Material.LAVA) return false;
-        if (!ground.getType().isSolid()) return false;
-        return true;
+        return isSafePassage(feet) && isSafePassage(head) && isSafeGround(ground);
+    }
+
+    private static boolean isSafePassage(Block block) {
+        if (block == null) return false;
+        return block.isPassable() && !block.isLiquid() && !isHazardous(block.getType());
+    }
+
+    private static boolean isSafeGround(Block block) {
+        if (block == null) return false;
+        return block.getType().isSolid() && !block.isLiquid() && !isHazardous(block.getType());
+    }
+
+    private static boolean isHazardous(Material material) {
+        if (material == null) return true;
+        return switch (material) {
+            case LAVA, FIRE, SOUL_FIRE, CAMPFIRE, SOUL_CAMPFIRE,
+                    MAGMA_BLOCK, CACTUS, SWEET_BERRY_BUSH, POWDER_SNOW -> true;
+            default -> false;
+        };
     }
 
     public enum LocateStatus { OK, NOT_FOUND, NOT_OWNER }
