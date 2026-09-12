@@ -118,6 +118,7 @@ MountLicense 把动物与载具变成**已登记的交通资产**：可停放、
 
 - `language`: `zh_CN` 或 `en_US`
 - `economy.enabled` + `economy.register_cost`: Vault 注册收费
+- `economy.account`: 收上来的注册费转到哪个账户。空 = 销毁（旧行为）；可写 `uuid:<uuid>` / 裸 UUID、`name:<账户名>`（名字原样交给经济插件，适合不登录的虚拟银行账户）、`<玩家名>`（先解析成 UUID）或 `bank:<名字>`（Vault bank）
 - `vehicle-profiles.yml` 的 `requiresTamedOwner`: 指定 profile 是否要求驯服且所有者匹配
 - `vehicle-profiles.yml` 的 `requiresSaddle`: 指定 profile 是否要求已装鞍（默认用于 pig / strider）
 - `registration.require_empty_vehicle`: 船/矿车注册前是否需为空（默认 true）

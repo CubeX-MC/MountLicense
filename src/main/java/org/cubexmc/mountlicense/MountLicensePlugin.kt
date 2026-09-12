@@ -8,8 +8,11 @@ import org.cubexmc.config.MigrationRunner
 import org.cubexmc.config.NoOpMigrationStep
 import org.cubexmc.config.ResourceFiles
 import org.cubexmc.core.CubexPlugin
+import org.cubexmc.economy.EconomyAccount
+import org.cubexmc.economy.VaultEconomy
 import org.cubexmc.mountlicense.command.MountLicenseCommand
 import org.cubexmc.mountlicense.config.ConfigManager
+import org.cubexmc.mountlicense.config.EconomyAccountStep
 import org.cubexmc.mountlicense.config.ProfileRegistry
 import org.cubexmc.mountlicense.lang.LanguageManager
 import org.cubexmc.mountlicense.listener.AutoParkListener
@@ -38,6 +41,9 @@ class MountLicensePlugin : CubexPlugin() {
     private lateinit var recallServiceField: RecallService
     private lateinit var resourceFiles: ResourceFiles
 
+    // Vault 缺席时为 null：注册照常跑，只是不收费（接入共享模块前就是这个行为）。
+    private var economyService: VaultEconomy? = null
+
     override fun enablePlugin() {
         resourceFiles = ResourceFiles(this)
         saveDefaultResources()
@@ -53,6 +59,8 @@ class MountLicensePlugin : CubexPlugin() {
 
         languageManagerField = LanguageManager(this, configManagerField.getLanguage())
         languageManagerField.load()
+
+        hookEconomy()
 
         profileRegistryField = ProfileRegistry(this)
         profileRegistryField.load()
@@ -117,6 +125,49 @@ class MountLicensePlugin : CubexPlugin() {
 
     fun recallService(): RecallService = recallServiceField
 
+    /**
+     * Vault 经济封装；Vault 或经济插件缺席时为 null。
+     *
+     * 返回 null **不是错误路径**：MountLicense 在没有经济插件的服务器上照常工作，
+     * 只是不收注册费 —— 和 StateCharge（没经济就 abortEnable）不同，
+     * 收费在这里是可选玩法（`economy.enabled` / `register_cost: 0`）。
+     */
+    fun economy(): VaultEconomy? = economyService
+
+    /**
+     * 接上 Vault 并解析一次入账目标。
+     *
+     * 按名字找账户要查 usercache / 存档，因此只在 enable 与 reload 各做一次，
+     * 绝不落进注册路径（解析结果由 [VaultEconomy] 持有）。
+     */
+    private fun hookEconomy() {
+        economyService = VaultEconomy.hook(this, log())
+        val economy = economyService
+        if (economy == null) {
+            logger.info("Vault economy provider not found; MountLicense will not charge for registration.")
+            return
+        }
+        logger.info("Vault economy hooked: ${economy.provider()}")
+        applyEconomyAccount()
+    }
+
+    /**
+     * 把 `economy.account` 解析成入账目标 —— 玩家付的注册费转到哪个账户。
+     *
+     * 配置写错**不阻止插件启动**：注册照常、扣款照常，只是钱不入账；
+     * 代价由 [VaultEconomy] 那边的 SEVERE 与每次扣款一条 WARNING 兜住。
+     */
+    private fun applyEconomyAccount() {
+        val economy = economyService ?: return
+        val account = try {
+            EconomyAccount.parse(configManagerField.getEconomyAccount())
+        } catch (ex: IllegalArgumentException) {
+            logger.severe("MountLicense economy.account is invalid; charges will not be banked. ${ex.message}")
+            EconomyAccount.None
+        }
+        economy.useAccount(account)
+    }
+
     fun reloadAll() {
         saveDefaultResources()
         try {
@@ -126,6 +177,9 @@ class MountLicensePlugin : CubexPlugin() {
             return
         }
         configManagerField.load()
+        // 经济提供方可能比本插件晚注册（softdepend 只担保 Vault 本体，不担保 EssentialsX 之类的 provider）。
+        // 接不上时 reload 重试一次，服主不必为此重启服务器。
+        if (economyService == null) hookEconomy() else applyEconomyAccount()
         languageManagerField.setLocale(configManagerField.getLanguage())
         languageManagerField.load()
         profileRegistryField.load()
@@ -144,8 +198,9 @@ class MountLicensePlugin : CubexPlugin() {
         migrations.run(
             MigrationPlan.yaml("MountLicense config", "config.yml")
                 .versionKey("config-version")
-                .targetVersion(2)
-                .addStep(NoOpMigrationStep(1, 2, "Add MountLicense config-version.")),
+                .targetVersion(3)
+                .addStep(NoOpMigrationStep(1, 2, "Add MountLicense config-version."))
+                .addStep(EconomyAccountStep()),
         )
         migrateLang(migrations, "zh_CN")
         migrateLang(migrations, "en_US")

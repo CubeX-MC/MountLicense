@@ -5,12 +5,14 @@ description = "MountLicense"
 
 dependencies {
     compileOnly(CubexDeps.spigotApi("1.18.2-R0.1-SNAPSHOT"))
-    compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
+    compileOnly(CubexDeps.vault) {
         exclude(group = "org.bukkit", module = "bukkit")
     }
     implementation(project(":modules:cubex-core"))
     implementation(project(":modules:cubex-config"))
     implementation(project(":modules:cubex-i18n"))
+    // Vault 封装 + economy.account 入账路由（内循环经济：注册费不再凭空消失）
+    implementation(project(":modules:cubex-economy"))
     testImplementation(CubexDeps.junitJupiter)
     testImplementation("org.mockito:mockito-core:5.18.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")

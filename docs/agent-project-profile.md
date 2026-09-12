@@ -44,7 +44,8 @@ Platform claims must stay synchronized across:
 - Services: `RegistryService`, `OwnershipService`, `ParkingService`,
   `RecallService`, `ItemFactory`, `PdcKeys`
 - Persistence: `persistence/VehicleIndex`, runtime `vehicles.yml`
-- Economy: `integration/EconomyHook`
+- Economy: shared `cubex-economy` (`VaultEconomy`, `EconomyAccount`); the plugin
+  hooks it in `MountLicensePlugin` and charges through `RegistryService`
 - Models: `model/VehicleRecord`, `VehicleState`, `VehicleProfile`,
   `VehicleFeature`
 - Localization: `lang/LanguageManager`, `src/main/resources/lang/*.yml`
@@ -149,7 +150,8 @@ Manual runtime checks:
 - Persistence or PDC schema change: `VehicleIndex`, `PdcKeys`, migration notes,
   README when operator-visible.
 - Platform/dependency change: `pom.xml`, `plugin.yml`, README, release notes.
-- Economy change: `EconomyHook`, config defaults, README, failure-path docs.
+- Economy change: `MountLicensePlugin` hook/`economy.account` wiring,
+  `RegistryService` charge path, config defaults, README, failure-path docs.
 
 ## Evidence Expectations
 

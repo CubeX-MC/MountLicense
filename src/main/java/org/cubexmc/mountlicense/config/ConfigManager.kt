@@ -8,6 +8,7 @@ import java.util.Locale
 class ConfigManager(private val plugin: MountLicensePlugin) {
     private var language = "zh_CN"
     private var economyEnabled = true
+    private var economyAccount = ""
     private var registerCost = 0.0
     private var recallCost = 0.0
 
@@ -62,6 +63,7 @@ class ConfigManager(private val plugin: MountLicensePlugin) {
         language = cfg.getString("language", "zh_CN") ?: "zh_CN"
 
         economyEnabled = cfg.getBoolean("economy.enabled", true)
+        economyAccount = cfg.getString("economy.account", "") ?: ""
         registerCost = cfg.getDouble("economy.register_cost", 0.0)
         recallCost = cfg.getDouble("economy.recall_cost", 0.0)
 
@@ -129,6 +131,12 @@ class ConfigManager(private val plugin: MountLicensePlugin) {
 
     fun getLanguage(): String = language
     fun isEconomyEnabled(): Boolean = economyEnabled
+
+    /**
+     * 注册费的入账目标（`economy.account`）。空 = 保持旧行为：扣款后货币直接销毁。
+     * 写法由 [org.cubexmc.economy.EconomyAccount.parse] 解析。
+     */
+    fun getEconomyAccount(): String = economyAccount
     fun getRegisterCost(): Double = registerCost
     fun getRecallCost(): Double = recallCost
 

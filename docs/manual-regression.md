@@ -30,4 +30,5 @@ evidence before a stable release claim.
 | Trust | Trust/untrust an online player and retry access as trustee | Trustee can use but cannot recall, release, or edit trust list | Not run |
 | Persistence | Restart server after registration, trust, park, and locate updates | `vehicles.yml` reloads and `/ml list`/`info` retain data | Not run |
 | Vault | Enable Vault economy with `economy.register_cost` | Successful registration charges once; insufficient funds fail without PDC/index writes; forced registration exception path refunds or logs refund failure | Not run |
+| Economy routing | Set `economy.account` to a server bank account and register a vehicle | The fee leaves the player and arrives in that account; an empty `economy.account` keeps the old destroy-the-money behaviour; no Vault installed still enables the plugin and registers for free | Not run |
 | Reload | Delete one generated default file (`config.yml`, `vehicle-profiles.yml`, or `lang/en_US.yml`), then run `/ml admin reload` | Missing default file is recreated, language/config/profiles refresh, and index state is retained | Not run |

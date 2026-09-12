@@ -1,7 +1,7 @@
 # MountLicense default config
 # Restart or run /ml reload after editing.
 
-config-version: 2
+config-version: 3
 language: zh_CN  # zh_CN or en_US
 
 # Vault economy hook.
@@ -10,6 +10,15 @@ language: zh_CN  # zh_CN or en_US
 # loaded by another plugin.
 economy:
   enabled: true
+  # Where the money taken from players goes (CubeX runs a closed-loop economy:
+  # what players spend should land in a server account instead of vanishing).
+  # Empty = destroy the money (the behaviour before this key existed).
+  #   uuid:<uuid> / <uuid>  - a player account addressed by UUID (most reliable)
+  #   name:<account>        - hand the name to the economy plugin as-is
+  #                           (use this for a virtual bank that never logs in)
+  #   <player name>         - resolve the name to a UUID first
+  #   bank:<name>           - a Vault bank account (needs bank support)
+  account: ""
   # Money taken when a player consumes a license to register a vehicle.
   # Set to 0 to skip charging even when economy.enabled is true.
   register_cost: 0.0

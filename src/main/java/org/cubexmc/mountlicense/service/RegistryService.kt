@@ -12,14 +12,15 @@ import org.bukkit.entity.Vehicle
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataContainer
 import org.bukkit.persistence.PersistentDataType
+import org.cubexmc.economy.VaultEconomy
 import org.cubexmc.mountlicense.MountLicensePlugin
 import org.cubexmc.mountlicense.config.ProfileRegistry
-import org.cubexmc.mountlicense.integration.EconomyHook
 import org.cubexmc.mountlicense.lang.LanguageManager
 import org.cubexmc.mountlicense.model.VehicleProfile
 import org.cubexmc.mountlicense.model.VehicleRecord
 import org.cubexmc.mountlicense.persistence.VehicleIndex
 import org.cubexmc.mountlicense.util.CooldownTracker
+import java.math.BigDecimal
 import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 import java.util.logging.Level
@@ -33,12 +34,15 @@ class RegistryService(
     private val lang: LanguageManager,
 ) {
     private val cooldowns = CooldownTracker()
-    private var economy: EconomyHook? = null
 
-    private fun economy(): EconomyHook {
-        if (economy == null) economy = EconomyHook(plugin)
-        return economy ?: EconomyHook(plugin).also { economy = it }
-    }
+    /**
+     * 当下能用来收费的经济；Vault 缺席或服主关掉 `economy.enabled` 时为 null。
+     *
+     * 每次现查而不缓存：`economy.enabled` 是可 reload 的开关，
+     * 拿掉它应当立刻停收费，不用重启服务器。
+     */
+    private fun chargingEconomy(): VaultEconomy? =
+        if (plugin.configManager().isEconomyEnabled()) plugin.economy() else null
 
     enum class Result {
         SUCCESS,
@@ -122,15 +126,20 @@ class RegistryService(
         }
 
         val cost = plugin.configManager().getRegisterCost()
+        val economy = chargingEconomy()
         var charged = false
-        if (cost > 0 && economy().isReady()) {
-            if (!economy().has(player, cost)) {
+        if (cost > 0 && economy != null) {
+            val fee = BigDecimal.valueOf(cost)
+            if (!economy.has(player, fee)) {
                 val p = HashMap<String, String>()
                 p["amount"] = formatMoney(cost)
                 send(player, "registration.fail_economy", p)
                 return Result.NOT_ENOUGH_MONEY
             }
-            if (!economy().withdraw(player, cost)) {
+            // charge() = 扣款 + 转进 `economy.account`（内循环经济）。
+            // 返回值只表达扣款成不成；入账失败不回滚、不阻止注册，
+            // 由共享模块记 WARNING 留痕（玩家已经拿到车牌，退款等于白送）。
+            if (!economy.charge(player, fee).success()) {
                 val p = HashMap<String, String>()
                 p["amount"] = formatMoney(cost)
                 send(player, "registration.fail_economy", p)
@@ -153,7 +162,11 @@ class RegistryService(
             }
         } catch (ex: RuntimeException) {
             rollbackRegistration(target, vehicleId)
-            if (charged && !economy().deposit(player, cost)) {
+            // 写入失败才退款：玩家什么都没拿到。
+            // 退的是钱、不是从 `economy.account` 把钱转回来（Vault 没有事务），
+            // 所以这条路径会让服务器账户多出一笔 —— 它只在写 PDC 抛异常时走到，
+            // 对帐的线索就是下面这条日志与模块的入账记录。
+            if (charged && economy != null && !economy.deposit(player, BigDecimal.valueOf(cost)).success()) {
                 plugin.logger.warning(
                     "Registration failed after charging ${player.name}; automatic refund of ${formatMoney(cost)} failed.",
                 )
